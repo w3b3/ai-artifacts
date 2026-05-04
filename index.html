@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Assisted Artifacts — Architecture Principles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+/* ═══ TOKENS ══════════════════════════════════════════════════════════════════
+   https://design.w-b.dev · https://github.com/w3b3/design-system-w-b
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#0e0e0e;
+  --bg2:#141414;
+  --fg:#f3f1ec;
+  --dim:rgba(243,241,236,0.35);
+  --dimmer:rgba(243,241,236,0.15);
+  --hair:rgba(243,241,236,0.08);
+  --accent:#d4a853;
+  --accent-dim:rgba(212,168,83,0.3);
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;
+  --helv:Helvetica,"Helvetica Neue",Arial,sans-serif;
+}
+
+/* ═══ BASE ════════════════════════════════════════════════════════════════ */
+html{scroll-behavior:smooth;background:var(--bg);color:var(--fg);font-family:var(--helv)}
+body{background:var(--bg);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ═══ SECTIONS ════════════════════════════════════════════════════════════ */
+.section{
+  min-height:100vh;
+  padding:120px 60px;
+  opacity:0;transform:translateY(30px);
+  transition:opacity 0.7s ease,transform 0.7s ease;
+}
+.section.visible{opacity:1;transform:translateY(0)}
+.section-narrow{max-width:900px;margin:0 auto}
+.section-wide{max-width:1400px;margin:0 auto}
+
+/* ═══ TYPOGRAPHY ══════════════════════════════════════════════════════════ */
+h1{font-weight:700;font-size:clamp(42px,6vw,72px);letter-spacing:-0.04em;line-height:1.0}
+h2{font-weight:700;font-size:clamp(24px,3.5vw,40px);letter-spacing:-0.03em;line-height:1.1;margin-bottom:32px}
+h3{font-weight:700;font-size:clamp(18px,2.5vw,28px);letter-spacing:-0.02em;line-height:1.2;margin-bottom:16px}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px}
+.body{font-family:var(--helv);font-size:clamp(16px,1.6vw,19px);line-height:1.65;color:var(--dim);max-width:680px}
+.body strong{color:var(--fg);font-weight:600}
+.mono{font-family:var(--mono);font-size:13px;letter-spacing:0.02em;color:var(--dim)}
+.divider{width:40px;height:1px;background:var(--dimmer);margin:0 0 32px}
+
+/* ═══ FLOW CHAIN ══════════════════════════════════════════════════════════ */
+.flow-chain{display:flex;flex-direction:column;gap:0;margin:50px 0}
+.flow-step{display:flex;align-items:flex-start;gap:16px;padding:18px 20px;border-left:2px solid var(--hair);
+  opacity:0;transform:translateX(-20px);transition:all 0.5s ease}
+.visible .flow-step{opacity:1;transform:translateX(0)}
+.flow-step:nth-child(1){transition-delay:0.1s}
+.flow-step:nth-child(2){transition-delay:0.2s}
+.flow-step:nth-child(3){transition-delay:0.3s}
+.flow-step:nth-child(4){transition-delay:0.4s}
+.flow-step .step-icon{width:32px;height:32px;border-radius:50%;background:var(--bg2);border:1px solid var(--dimmer);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--dim);flex-shrink:0;margin-top:2px}
+.flow-step .step-body{flex:1}
+.flow-step .step-label{font-family:var(--helv);font-weight:700;font-size:14px;margin-bottom:4px}
+.flow-step .step-desc{font-family:var(--mono);font-size:12px;color:var(--dim);line-height:1.55}
+.flow-step .step-desc code{font-family:var(--mono);font-size:11px;color:var(--fg);background:var(--bg);padding:1px 5px;border:1px solid var(--hair)}
+.flow-step.highlight{border-left-color:var(--accent)}
+.flow-step.highlight .step-icon{border-color:var(--accent);color:var(--accent)}
+.flow-step.highlight .step-label{color:var(--accent)}
+
+/* ═══ CARDS ═══════════════════════════════════════════════════════════════ */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;margin:50px 0}
+.card{padding:24px;border:1px solid var(--hair);background:var(--bg2);
+  opacity:0;transform:translateY(20px);transition:all 0.6s ease}
+.visible .card{opacity:1;transform:translateY(0)}
+.visible .card:nth-child(1){transition-delay:0.1s}
+.visible .card:nth-child(2){transition-delay:0.2s}
+.visible .card:nth-child(3){transition-delay:0.3s}
+.visible .card:nth-child(4){transition-delay:0.4s}
+.card h4{font-family:var(--helv);font-weight:700;font-size:15px;letter-spacing:-0.01em;margin-bottom:10px}
+.card p{font-family:var(--mono);font-size:12px;color:var(--dim);line-height:1.55}
+.card.accent-card{border-color:var(--accent-dim)}
+.card.accent-card h4{color:var(--accent)}
+
+/* ═══ STACKED LAYERS ══════════════════════════════════════════════════════ */
+.layers{display:flex;flex-direction:column;gap:0;max-width:700px;margin:50px 0}
+.layer{padding:20px 24px;border:1px solid var(--hair);border-bottom:none;
+  opacity:0;transform:translateY(20px);transition:all 0.5s ease}
+.layer:last-child{border-bottom:1px solid var(--hair)}
+.visible .layer{opacity:1;transform:translateY(0)}
+.visible .layer:nth-child(1){transition-delay:0.15s}
+.visible .layer:nth-child(2){transition-delay:0.30s}
+.visible .layer:nth-child(3){transition-delay:0.45s}
+.visible .layer:nth-child(4){transition-delay:0.60s}
+.layer-name{font-family:var(--helv);font-weight:700;font-size:14px;margin-bottom:4px}
+.layer-desc{font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.55}
+.layer-desc code{font-family:var(--mono);font-size:10px;color:var(--fg);background:var(--bg);padding:1px 5px;border:1px solid var(--hair)}
+.layer.hot{border-color:var(--accent-dim)}
+.layer.hot .layer-name{color:var(--accent)}
+
+/* ═══ PIPELINE NODES ══════════════════════════════════════════════════════ */
+.node-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.node{width:64px;height:64px;border-radius:50%;border:2px solid var(--fg);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:9px;letter-spacing:0.06em;text-transform:uppercase}
+.node.filled{background:var(--fg);color:var(--bg)}
+.node.accent{border-color:var(--accent);color:var(--accent)}
+.node-arrow{font-family:var(--mono);color:var(--dimmer);font-size:16px}
+
+/* ═══ ARTIFACT MAP TABLE ══════════════════════════════════════════════════ */
+.artifact-map{border:1px solid var(--hair);margin:40px 0;max-width:700px;
+  opacity:0;transform:translateY(16px);transition:all 0.6s ease 0.3s}
+.visible .artifact-map{opacity:1;transform:translateY(0)}
+.artifact-map-head{display:grid;grid-template-columns:1fr 1fr 1.4fr;border-bottom:1px solid var(--hair)}
+.artifact-map-head div{padding:10px 16px;font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--dimmer)}
+.artifact-map-row{display:grid;grid-template-columns:1fr 1fr 1.4fr;border-bottom:1px solid var(--hair)}
+.artifact-map-row:last-child{border-bottom:none}
+.artifact-map-row div{padding:11px 16px;font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.45}
+.artifact-map-row div:first-child{color:var(--fg)}
+.artifact-map-row div:nth-child(2){color:var(--dim)}
+
+/* ═══ ANIMATIONS ══════════════════════════════════════════════════════════ */
+@keyframes breathe{0%,100%{opacity:0.3}50%{opacity:1}}
+.breathe{animation:breathe 2s ease infinite}
+
+/* ═══ RESPONSIVE ══════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  .section{padding:80px 24px}
+  .card-grid{grid-template-columns:1fr}
+  .artifact-map-head,.artifact-map-row{grid-template-columns:1fr}
+  .artifact-map-head div:not(:first-child),.artifact-map-row div:not(:first-child){display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══════════════════════════════════════════════════════════════ -->
+<section class="section" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;opacity:1;transform:none">
+  <div class="label">Architecture Reference // 2026</div>
+  <h1 style="margin:16px 0">AI-Assisted<br>Artifacts</h1>
+  <p class="mono" style="margin-top:16px;max-width:480px;line-height:1.7">Every effort produces an artifact. Every artifact closes a loop. Every loop closes with evidence — not a status update.<br>8 domains &nbsp;&middot;&nbsp; 27 rules.</p>
+  <div class="node-row" style="justify-content:center;margin-top:48px">
+    <div class="node">EFF</div>
+    <div class="node-arrow">&rarr;</div>
+    <div class="node filled">ART</div>
+    <div class="node-arrow">&rarr;</div>
+    <div class="node">CLO</div>
+    <div class="node-arrow">&rarr;</div>
+    <div class="node accent">EVD</div>
+  </div>
+  <p class="mono" style="margin-top:16px;font-size:10px;letter-spacing:0.14em;color:var(--dimmer)">EFFORT &nbsp;&middot;&nbsp; ARTIFACT &nbsp;&middot;&nbsp; CLOSE &nbsp;&middot;&nbsp; EVIDENCE</p>
+</section>
+
+<!-- ═══ 01 FOUNDATION ══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-narrow">
+    <div class="label">01 // Foundation</div>
+    <div class="divider"></div>
+    <h2>What is the artifact principle, and why is "done" not the same as "closed"?</h2>
+    <p class="body">An artifact is the externalized evidence that work happened — a document, a commit, a recording, a decision log. Without an artifact, work exists only in the head of the person who did it: invisible to the team, unreviewable, and unable to compound. High performance in remote, distributed teams is not heroic individual output — it is consistent loop-closing through intentional artifact creation. <strong>If a day of effort produced no artifact, either the work wasn't worth it, or the output wasn't captured — and both are problems worth surfacing.</strong></p>
+
+    <div class="layers">
+      <div class="layer">
+        <div class="layer-name">An artifact is the only verifiable evidence that work happened</div>
+        <div class="layer-desc">Work that lives only in someone's head is not done — it is invisible. An artifact externalizes the output of effort in a form that can be read, reviewed, questioned, and built upon by others. The absence of an artifact is not humility; it is a system gap. In remote teams, invisible work is the same as no work — neither can be coordinated, reviewed, or compounded.</div>
+      </div>
+      <div class="layer">
+        <div class="layer-name">"Done" is a process state — "closed" is an evidence state</div>
+        <div class="layer-desc">Marking a ticket done means the work stopped. A closed loop means the right people have the artifact, the signal has been observed, and the work's impact is confirmed. A PR can be merged (done) while the feature's effect is unmeasured (open loop). A bug fix can be shipped (done) while no telemetry has confirmed it worked (open loop). The goal is not done — it is closed.</div>
+      </div>
+      <div class="layer hot">
+        <div class="layer-name">High performance is consistent loop-closing — not sporadic heroics</div>
+        <div class="layer-desc">A team member who closes one loop every day for a quarter outperforms one who closes five loops in a sprint and goes quiet for six weeks. The consistent contributor's value is compounding and predictable; the hero's value is volatile and depends on continued heroics. High performance is not exclusive to high IQ or high effort — it is the result of intentional, repeated discipline to close loops with evidence.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 02 EFFORT-ARTIFACT-EVIDENCE ════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-narrow">
+    <div class="label">02 // Effort–Artifact–Evidence</div>
+    <div class="divider"></div>
+    <h2>What artifact does each class of work produce, and what evidence closes the loop?</h2>
+    <p class="body">Every category of work has a canonical artifact and a specific evidence condition that closes the loop. Research loops close when a decision is recorded. Bug fix loops close when telemetry confirms the fix. Feature loops close when signals show usage without regression. <strong>The loop closure condition is the part most teams skip — producing artifacts but never verifying they reached their purpose.</strong></p>
+
+    <div class="artifact-map">
+      <div class="artifact-map-head">
+        <div>Effort</div>
+        <div>Artifact</div>
+        <div>Loop closes when&hellip;</div>
+      </div>
+      <div class="artifact-map-row">
+        <div>Research</div>
+        <div>Spike document</div>
+        <div>Decision is recorded and shared</div>
+      </div>
+      <div class="artifact-map-row">
+        <div>Incident</div>
+        <div>RCA / postmortem</div>
+        <div>Action items have owners and dates</div>
+      </div>
+      <div class="artifact-map-row">
+        <div>Bug fix</div>
+        <div>Commit + PR</div>
+        <div>Telemetry confirms fix in production</div>
+      </div>
+      <div class="artifact-map-row">
+        <div>Feature</div>
+        <div>PR + flag rollout</div>
+        <div>Signals show usage and no regression</div>
+      </div>
+      <div class="artifact-map-row">
+        <div>Training</div>
+        <div>Report or write-up</div>
+        <div>Insight is applied or shared with peers</div>
+      </div>
+      <div class="artifact-map-row">
+        <div>Meeting</div>
+        <div>Decision record</div>
+        <div>Updates reach all relevant parties</div>
+      </div>
+    </div>
+
+    <div class="flow-chain">
+      <div class="flow-step">
+        <div class="step-icon">01</div>
+        <div class="step-body">
+          <div class="step-label">Research → Spike: the loop closes when a decision is recorded and shared — not when exploration ends</div>
+          <div class="step-desc">A research effort that ends without a decision record produced no lasting value — the insights exist only in the researcher's memory and will be re-discovered the next time someone asks the same question. The spike document records the context, the options considered, the reasoning, and the decision made. The loop closes when the relevant decision-makers have read it and the path forward is acknowledged — not when the document is published.</div>
+        </div>
+      </div>
+      <div class="flow-step highlight">
+        <div class="step-icon">02</div>
+        <div class="step-body">
+          <div class="step-label">Feature → PR + flag rollout: the loop closes when signals show usage and no regression — not when the PR merges</div>
+          <div class="step-desc">A feature is not shipped when it is deployed; it is shipped when real users are using it, the metrics show engagement, and no upstream signals degraded. The loop includes the flag rollout, the instrumentation check, and the first signal read. Without the signal read, the PR is an open loop — the team does not know if the feature was the right investment. Merge velocity without signal velocity is churn disguised as progress.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">03</div>
+        <div class="step-body">
+          <div class="step-label">Bug fix → telemetry: the loop closes when production confirms the symptom is resolved — not when the fix ships</div>
+          <div class="step-desc">Merging a PR is deploying a candidate fix. The loop closes when production telemetry — error rates, log queries, user reports — confirms the symptom is resolved. A PR merged without verifying the signal is a guess that shipped. Teams that measure fix velocity without measuring fix confirmation are optimizing the wrong metric — they know how fast they ship, not how often they're right.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">04</div>
+        <div class="step-body">
+          <div class="step-label">Meeting → decision record: the loop closes when updates reach relevant parties — not when the call ends</div>
+          <div class="step-desc">A meeting where every attendee walks away with a different understanding of what was decided is not a closed loop — it is a shared ambiguity event. The meeting loop closes when the decision is written down, action items have owners and dates, and the relevant parties who were not in the room have been briefed. Otherwise the meeting produced activity without an artifact, and the next meeting will relitigate the same decision.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 03 AI-ASSISTED GENERATION ══════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-narrow">
+    <div class="label">03 // AI-Assisted Generation</div>
+    <div class="divider"></div>
+    <h2>How does AI change the economics of artifact creation, and what does it not change?</h2>
+    <p class="body">The bottleneck in artifact creation is almost never writing speed — it is starting. A blank page for a postmortem, a spike, or a meeting summary creates friction that causes the artifact to be deferred, then forgotten. AI eliminates that friction: given context, it produces a structured first draft in seconds. This removes the last credible excuse for not creating an artifact. <strong>AI lowers the activation energy. The discipline requirement — to close the loop with real evidence — does not change.</strong></p>
+
+    <div class="flow-chain">
+      <div class="flow-step">
+        <div class="step-icon">01</div>
+        <div class="step-body">
+          <div class="step-label">AI eliminates the blank-page problem — the bottleneck was never writing speed</div>
+          <div class="step-desc">The friction in artifact creation is starting, not finishing. An engineer who says "I didn't have time to write the postmortem" usually means "I didn't start." Given a brief context dump — what happened, what we checked, what we did — AI produces a structured draft in under a minute. The bottleneck was never writing ability or writing time. It was the activation energy of the blank page. AI removes it.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">02</div>
+        <div class="step-body">
+          <div class="step-label">Prompt with context, not with the task — artifact quality is proportional to the context provided</div>
+          <div class="step-desc">"Write a postmortem" produces generic output. "Here are the incident timeline, the contributing factors we identified, and the three action items with owners and dates — structure this into a postmortem for internal review" produces a useful draft. The highest-leverage investment in AI-assisted artifact velocity is teaching the team to front-load context before invoking AI. Context is the work — generation is the accelerant.</div>
+        </div>
+      </div>
+      <div class="flow-step highlight">
+        <div class="step-icon">03</div>
+        <div class="step-body">
+          <div class="step-label">AI-generated artifacts require human review before loop closure — generation is not closure</div>
+          <div class="step-desc">An AI-produced spike or RCA is a draft, not a closed loop. The human author must review it for factual accuracy, completeness of context, and correctness of the decision record before publishing. Shipping raw AI output as a closed loop creates false closure: the artifact exists, but it may not accurately represent what happened or what was decided. The signal is not that an artifact was generated — it is that a human reviewed, approved, and routed it.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">04</div>
+        <div class="step-body">
+          <div class="step-label">Use AI to generate artifacts for efforts that previously produced none — that is the highest-value application</div>
+          <div class="step-desc">The highest-value use of AI in artifact creation is not making good artifacts faster — it is generating artifacts for classes of work that historically produced nothing. Training session follow-ups, informal decisions made in Slack threads, architectural reasoning documented after the fact — these loops were left open because the artifact cost was too high relative to the perceived value. AI makes the cost near-zero. The discipline is applying it consistently, not selectively.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 04 LOOP CLOSURE ════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-narrow">
+    <div class="label">04 // Loop Closure</div>
+    <div class="divider"></div>
+    <h2>What does it mean for a loop to be closed, and how do you distinguish closed from merely shipped?</h2>
+    <p class="body">A closed loop has three components: an artifact, an audience, and a signal. The artifact externalizes the work. The audience confirms the right people received it. The signal confirms the impact was observed. Most teams hit the artifact stage and stop — they create the output but never verify it reached the people who needed it or produced the effect that justified the work. <strong>A loop closed without a signal is an artifact in a void — not a loop at all.</strong></p>
+
+    <div class="layers">
+      <div class="layer">
+        <div class="layer-name">A closed loop requires an artifact, an audience, and a signal — missing any one leaves it open</div>
+        <div class="layer-desc">The artifact without an audience is a document in a folder nobody opens. The artifact without a signal is a PR merged without checking if the bug is fixed. The audience without an artifact is a verbal update that leaves no record. All three are required. Missing any one means the chain from work to evidence is incomplete — the loop is technically open regardless of how much effort went in.</div>
+      </div>
+      <div class="layer hot">
+        <div class="layer-name">If nobody relevant read it, the loop is not closed — routing is not optional</div>
+        <div class="layer-desc">A postmortem published to a wiki that nobody links, shares, or references is not a closed loop — it is a stored artifact in an unread location. Loop closure requires intentional routing: who needs this, how will it reach them, and how will you know it did. Posting to the relevant Slack channel, tagging stakeholders, and confirming receipt are not ceremony — they are the final steps of closure. The loop closes when the signal travels, not when the artifact is created.</div>
+      </div>
+      <div class="layer">
+        <div class="layer-name">Define the loop closure condition before starting the work — not after, when the team is tired</div>
+        <div class="layer-desc">The most common reason loops stay open is that the closure condition was never specified. "Write an RCA" has no closure condition. "Write an RCA, share it in #incidents, get acknowledgment from the on-call lead, and add action items to Jira" has one. Define what evidence closes each loop before the work begins. Closure conditions defined after the fact are chosen to confirm done, not to confirm closed.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 05 REMOTE-FIRST TRANSPARENCY ══════════════════════════════════════ -->
+<section class="section">
+  <div class="section-narrow">
+    <div class="label">05 // Remote-First Transparency</div>
+    <div class="divider"></div>
+    <h2>What does distributed work demand from artifact culture that co-located work could absorb informally?</h2>
+    <p class="body">Co-located teams absorb informal communication — the hallway conversation, the overheard decision, the whiteboard that stays up all week. Distributed teams cannot. In async, remote-first environments, the artifact is the only communication channel. There is no ambient awareness of what teammates are working on, no implicit signal that work is progressing. <strong>Remote work does not create a higher standard for artifact quality — it creates a minimum viable standard for artifact existence.</strong></p>
+
+    <div class="layers">
+      <div class="layer">
+        <div class="layer-name">Remote work converts implicit context into explicit artifacts — or loses it permanently</div>
+        <div class="layer-desc">In an office, context travels informally: team members overhear conversations, see who is at a whiteboard, notice when someone is blocked. In distributed teams, context that is not written down does not exist for anyone who was not in the specific conversation. The discipline of the artifact is not a bureaucratic add-on — it is the mechanism by which distributed teams maintain shared context across time zones, work schedules, and team rotations.</div>
+      </div>
+      <div class="layer">
+        <div class="layer-name">Artifacts replace the hallway conversation — and they last longer than any hallway conversation ever did</div>
+        <div class="layer-desc">A decision made in a three-message Slack thread is an ephemeral artifact that will be lost within a week. A decision record takes five minutes to write and serves the same purpose for the next six months. The overhead of async documentation is front-loaded and small; the payoff is persistent shared context. Teams that write down decisions as a habit outperform teams that decide verbally and document only when someone asks.</div>
+      </div>
+      <div class="layer hot">
+        <div class="layer-name">The artifact is the communication — not a supplement to it</div>
+        <div class="layer-desc">In async culture, sending a message that says "I finished the spike, let me know if you want to discuss" is not communication — it is an offer to communicate later. The artifact is the communication: "Here is the spike document, with the decision highlighted and the relevant stakeholders tagged." Optimizing for async artifact quality is not process overhead — it is the primary delivery mechanism of distributed work. Everything else is latency.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 06 INDIVIDUAL CONTRIBUTION VISIBILITY ════════════════════════════ -->
+<section class="section">
+  <div class="section-narrow">
+    <div class="label">06 // Individual Visibility</div>
+    <div class="divider"></div>
+    <h2>What does it mean to surface your own contribution, and why is it a team responsibility — not a personal one?</h2>
+    <p class="body">In distributed teams, contribution that is not made visible does not exist in the system. This is not about personal recognition — it is about system completeness. If a team member closes a meaningful loop but nobody else knows it happened, the work cannot be built upon, the decision cannot be referenced, and the impact cannot compound. <strong>Surfacing your own contribution is system hygiene, not self-promotion — and it is a responsibility to the team, not an indulgence of ego.</strong></p>
+
+    <div class="flow-chain">
+      <div class="flow-step">
+        <div class="step-icon">01</div>
+        <div class="step-body">
+          <div class="step-label">Everyone must surface their own contribution — intentionally, not by accident or management prompt</div>
+          <div class="step-desc">It is not by accident or chance that anyone is on the team. Every member's output is expected and needed. Waiting for a manager to notice, or assuming completed work will be discovered, is not modesty — it is a failure of the distributed system's signal. In high-trust, high-transparency teams, surfacing your own work is the default behavior — not a sign of ego. The team cannot coordinate around work it cannot see.</div>
+        </div>
+      </div>
+      <div class="flow-step highlight">
+        <div class="step-icon">02</div>
+        <div class="step-body">
+          <div class="step-label">A day with no visible artifact is a signal that something went wrong — and naming it is the right move</div>
+          <div class="step-desc">If a day of effort produced no artifact, one of two things happened: the work wasn't worth doing, or the output wasn't captured. Both are worth surfacing. The team member who says "I spent the day on X but I'm not sure it produced anything worth sharing" is providing more value than the one who stays silent. Silence is not a signal of productivity — it is the absence of a signal, which in a distributed system reads as the absence of work.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">03</div>
+        <div class="step-body">
+          <div class="step-label">Contribution visibility is distinct from status updates — artifacts close loops, activity logs don't</div>
+          <div class="step-desc">"I worked on the auth service today" is an activity report. An artifact closes a loop: "I investigated the auth latency spike — spike doc here — root cause is token validation overhead, recommended fix is X, decision needed from Y by Z." The first describes effort. The second produces a closable loop with an owner and a next step. Teams that track activity instead of artifacts measure busyness rather than progress.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 07 SIGNALS & TELEMETRY ═════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-narrow">
+    <div class="label">07 // Signals &amp; Telemetry</div>
+    <div class="divider"></div>
+    <h2>How do you know a loop actually closed, and what counts as evidence versus assertion?</h2>
+    <p class="body">An artifact published is a loop claimed to be closed. Evidence that the artifact reached its purpose is a loop confirmed closed. These are different. The signal bridges the gap — the telemetry confirming the bug is fixed, the read receipt confirming the decision record was seen, the metric confirming the feature is being used. Without the signal, the artifact is a claim, not a confirmation. <strong>Evidence is not a formality — it is the difference between a closed loop and an open one dressed in documentation.</strong></p>
+
+    <div class="layers">
+      <div class="layer">
+        <div class="layer-name">Define what counts as evidence before the artifact is created — improvised closure confirms done, not closed</div>
+        <div class="layer-desc">A spike document closes when the relevant stakeholders acknowledge the decision. An RCA closes when action items have owners, dates, and are tracked. A bug fix closes when production error rates return to baseline. These conditions must be defined before the work begins — not improvised afterward. Improvised closure conditions are chosen to fit what's already true, which confirms done, not closed.</div>
+      </div>
+      <div class="layer hot">
+        <div class="layer-name">Telemetry is the highest-integrity signal — it cannot be socially pressured into confirming done</div>
+        <div class="layer-desc">A team member reporting "the bug is fixed" is asserting closure. A dashboard showing error rate returning to baseline is confirming it. Telemetry-based closure conditions are more reliable than human-assertion-based ones because they are not subject to optimism bias, deadline pressure, or social friction. Invest in making telemetry-based closure the default for technical work — not as an audit mechanism, but as the primary signal of truth.</div>
+      </div>
+      <div class="layer">
+        <div class="layer-name">Missing signals are the canary for missing work — treat them as such, not as instrumentation debt</div>
+        <div class="layer-desc">A feature deployed with no usage signal after 30 days is not a feature that nobody used — it is a feature with an uninstrumented loop. A bug fix with no telemetry check is not confirmed fixed — it is an unverified hypothesis shipped to production. When a signal is missing, the question is not "is the work done?" — it is "what is preventing us from knowing whether the work mattered?" That question is always worth asking before the next sprint starts.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 08 CULTURE & CADENCE ═══════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-wide">
+    <div class="label">08 // Culture &amp; Cadence</div>
+    <div class="divider"></div>
+    <h2>What organizational conditions make consistent loop-closing sustainable rather than exhausting?</h2>
+    <p class="body">Artifact discipline at individual scale is a habit. At team scale, it is a culture. The conditions that make it sustainable are psychological safety to share imperfect drafts, low-ego ownership where the artifact belongs to the team rather than the author, trust that surfacing problems is rewarded rather than punished, and a daily cadence that makes closing one loop per day the norm rather than the exception. <strong>We all win if we all row the same cadence — toward the same end goal — and the loop closes with evidence, not with a Friday dump of what was done.</strong></p>
+
+    <div class="card-grid">
+      <div class="card accent-card">
+        <h4>Daily focused progress compounds — weekly dumps do not</h4>
+        <p>A team where every member closes one loop per day produces compounding signal that a team dumping work on Fridays never will. Daily closure means feedback arrives while context is fresh, blockers surface while they are still small, and the team's shared understanding stays current. Weekly reporting is not a cadence — it is a lag disguised as a process. Feedback that arrives six days late is often feedback that no longer applies.</p>
+      </div>
+      <div class="card">
+        <h4>Low ego: the artifact belongs to the team — the author's name is for accountability, not ownership</div>
+        <p>An artifact that cannot be edited, questioned, or built upon because the author treats it as a personal achievement is not a team artifact — it is a monument. Artifacts in high-performing teams are working documents: draft quality is acceptable and expected, corrections are welcomed, and the goal is accuracy rather than credit. The best artifacts are the ones that improve through multiple sets of eyes before closure.</p>
+      </div>
+      <div class="card">
+        <h4>Culture that penalizes visible mistakes produces work that surfaces only when it is already too late to be useful</h4>
+        <p>The most dangerous outcome of a low-trust culture is not bad work — it is invisible work. When surfacing an early draft invites criticism, team members wait until they are certain before sharing. When naming a problem invites blame, team members stay quiet until the problem is unavoidable. Trust is the prerequisite for the artifact system to function. Psychological safety is what allows people to surface imperfect early work early enough to be redirected.</p>
+      </div>
+      <div class="card">
+        <h4>High collab: the best artifacts are built in public and improved by others before the loop closes</h4>
+        <p>A spike document written in private and published when finished is less accurate than one written in public where teammates catch errors before they become decisions. Artifacts that pass through multiple sets of eyes before closure carry broader ownership and higher accuracy. The practice of sharing in-progress artifacts for async review is not a sign of uncertainty — it is the mechanism by which distributed teams build shared context without synchronous meetings.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ OUTRO ════════════════════════════════════════════════════════════════ -->
+<section class="section" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:60vh">
+  <h2>The mental model</h2>
+  <p class="mono" style="margin-top:30px;max-width:560px;text-align:center;line-height:2.0">
+    Every effort produces an artifact. Every artifact closes a loop. Every loop closes with evidence.<br>
+    Done is a process state. Closed is an evidence state.<br>
+    AI lowers the activation energy. The discipline requirement does not change.<br>
+    Surfacing your own contribution is system hygiene — not self-promotion.<br>
+    We all win if we all row the same cadence, toward the same end goal.
+  </p>
+  <a href="https://linkedin.com/in/brasileiro" target="_blank" rel="noopener"
+     style="display:inline-block;margin-top:60px;font-family:var(--mono);font-size:12px;letter-spacing:0.12em;color:var(--dim);text-decoration:none;border-bottom:1px solid var(--dimmer);padding-bottom:2px;transition:color 0.2s,border-color 0.2s"
+     onmouseover="this.style.color='var(--fg)';this.style.borderColor='var(--fg)'"
+     onmouseout="this.style.color='var(--dim)';this.style.borderColor='var(--dimmer)'">Daniel Brasileiro</a>
+</section>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
+document.querySelectorAll('.section').forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
